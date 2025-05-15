@@ -1,85 +1,45 @@
-<script setup>
-import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
-</script>
-
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
+  <div>
+    <p>
+      {{ loggedInUser ? `Logged in as ${loggedInUser.name}` : 'Not logged in' }}
+    </p>
 
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-      </nav>
-    </div>
-  </header>
-
-  <RouterView />
+    <form>
+      <input type="email" placeholder="Email" v-model="email" />
+      <input type="password" placeholder="Password" v-model="password" />
+      <input type="text" placeholder="Name" v-model="name" />
+      <button type="button" @click="login(email, password)">Login</button>
+      <button type="button" @click="register">
+        Register
+      </button>
+      <button type="button" @click="logout">
+        Logout
+      </button>
+    </form>
+  </div>
 </template>
 
-<style scoped>
-header {
-  line-height: 1.5;
-  max-height: 100vh;
-}
+<script setup>
+import { ref } from 'vue';
+import { account, ID } from './lib/appwrite.js';
 
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
+const loggedInUser = ref(null);
+const email = ref('');
+const password = ref('');
+const name = ref('');
 
-nav {
-  width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
-}
+const login = async (email, password) => {
+  await account.createEmailPasswordSession(email, password);
+  loggedInUser.value = await account.get();
+};
 
-nav a.router-link-exact-active {
-  color: var(--color-text);
-}
+const register = async () => {
+  await account.create(ID.unique(), email.value, password.value, name.value);
+  login(email.value, password.value);
+};
 
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-
-    padding: 1rem 0;
-    margin-top: 1rem;
-  }
-}
-</style>
+const logout = async () => {
+  await account.deleteSession('current');
+  loggedInUser.value = null;
+};
+</script>
